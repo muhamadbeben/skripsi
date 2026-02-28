@@ -194,8 +194,8 @@ class _IzinScreenState extends State<IzinScreen>
                   children: [
                     const Text(
                       'Ajukan Izin Santri',
-                      style: TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.bold),
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     IconButton(
                         onPressed: () => Navigator.pop(ctx2),
@@ -203,192 +203,192 @@ class _IzinScreenState extends State<IzinScreen>
                   ],
                 ),
               ),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
-                  child: Form(
-                    key: formKey,
-                    child: Column(
-                      children: [
-                        DropdownButtonFormField<SantriModel>(
-                          value: selectedSantri,
-                          hint: const Text('Pilih Santri'),
-                          items: dummySantriList
-                              .map((s) => DropdownMenuItem(
-                                    value: s,
-                                    child: Text(s.nama),
-                                  ))
-                              .toList(),
-                          onChanged: (v) =>
-                              setStateModal(() => selectedSantri = v),
-                          validator: (v) =>
-                              v == null ? 'Pilih santri' : null,
-                          decoration: InputDecoration(
-                            labelText: 'Santri',
-                            prefixIcon: const Icon(Icons.person),
-                            filled: true,
-                            fillColor: Colors.grey.shade50,
-                            border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 14),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        DropdownButtonFormField<String>(
-                          value: selectedJenisIzin,
-                          items: jenisIzinList
-                              .map((j) => DropdownMenuItem(
-                                    value: j,
-                                    child: Text(j),
-                                  ))
-                              .toList(),
-                          onChanged: (v) =>
-                              setStateModal(() => selectedJenisIzin = v!),
-                          decoration: InputDecoration(
-                            labelText: 'Jenis Izin',
-                            prefixIcon: const Icon(Icons.category),
-                            filled: true,
-                            fillColor: Colors.grey.shade50,
-                            border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 14),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: alasanController,
-                          maxLines: 3,
-                          validator: (v) =>
-                              v!.isEmpty ? 'Alasan wajib diisi' : null,
-                          decoration: InputDecoration(
-                            labelText: 'Alasan / Keperluan',
-                            prefixIcon: const Icon(Icons.edit_note),
-                            filled: true,
-                            fillColor: Colors.grey.shade50,
-                            border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextFormField(
-                                controller: mulaiController,
-                                readOnly: true,
-                                onTap: () async {
-                                  final date = await showDatePicker(
-                                    context: ctx2,
-                                    initialDate: DateTime.now(),
-                                    firstDate: DateTime.now(),
-                                    lastDate: DateTime.now()
-                                        .add(const Duration(days: 30)),
-                                  );
-                                  if (date != null) {
-                                    mulaiController.text =
-                                        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-                                  }
-                                },
-                                validator: (v) =>
-                                    v!.isEmpty ? 'Wajib diisi' : null,
-                                decoration: InputDecoration(
-                                  labelText: 'Tgl Mulai',
-                                  prefixIcon:
-                                      const Icon(Icons.calendar_today),
-                                  filled: true,
-                                  fillColor: Colors.grey.shade50,
-                                  border: OutlineInputBorder(
-                                      borderRadius:
-                                          BorderRadius.circular(12)),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: TextFormField(
-                                controller: selesaiController,
-                                readOnly: true,
-                                onTap: () async {
-                                  final date = await showDatePicker(
-                                    context: ctx2,
-                                    initialDate: DateTime.now(),
-                                    firstDate: DateTime.now(),
-                                    lastDate: DateTime.now()
-                                        .add(const Duration(days: 30)),
-                                  );
-                                  if (date != null) {
-                                    selesaiController.text =
-                                        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-                                  }
-                                },
-                                validator: (v) =>
-                                    v!.isEmpty ? 'Wajib diisi' : null,
-                                decoration: InputDecoration(
-                                  labelText: 'Tgl Selesai',
-                                  prefixIcon:
-                                      const Icon(Icons.calendar_today),
-                                  filled: true,
-                                  fillColor: Colors.grey.shade50,
-                                  border: OutlineInputBorder(
-                                      borderRadius:
-                                          BorderRadius.circular(12)),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 24),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 50,
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              if (formKey.currentState!.validate()) {
-                                final tglMulai = DateTime.parse(
-                                    mulaiController.text);
-                                final tglSelesai = DateTime.parse(
-                                    selesaiController.text);
-                                final hari = tglSelesai
-                                        .difference(tglMulai)
-                                        .inDays +
-                                    1;
+              // Expanded(
+              //   child: SingleChildScrollView(
+              //     padding: const EdgeInsets.all(20),
+              //     child: Form(
+              //       key: formKey,
+              //       child: Column(
+              //         children: [
+              //           DropdownButtonFormField<SantriModel>(
+              //             value: selectedSantri,
+              //             hint: const Text('Pilih Santri'),
+              //             items: dummySantriList
+              //                 .map((s) => DropdownMenuItem(
+              //                       value: s,
+              //                       child: Text(s.nama),
+              //                     ))
+              //                 .toList(),
+              //             onChanged: (v) =>
+              //                 setStateModal(() => selectedSantri = v),
+              //             validator: (v) =>
+              //                 v == null ? 'Pilih santri' : null,
+              //             decoration: InputDecoration(
+              //               labelText: 'Santri',
+              //               prefixIcon: const Icon(Icons.person),
+              //               filled: true,
+              //               fillColor: Colors.grey.shade50,
+              //               border: OutlineInputBorder(
+              //                   borderRadius: BorderRadius.circular(12)),
+              //               contentPadding: const EdgeInsets.symmetric(
+              //                   horizontal: 16, vertical: 14),
+              //             ),
+              //           ),
+              //           const SizedBox(height: 16),
+              //           DropdownButtonFormField<String>(
+              //             value: selectedJenisIzin,
+              //             items: jenisIzinList
+              //                 .map((j) => DropdownMenuItem(
+              //                       value: j,
+              //                       child: Text(j),
+              //                     ))
+              //                 .toList(),
+              //             onChanged: (v) =>
+              //                 setStateModal(() => selectedJenisIzin = v!),
+              //             decoration: InputDecoration(
+              //               labelText: 'Jenis Izin',
+              //               prefixIcon: const Icon(Icons.category),
+              //               filled: true,
+              //               fillColor: Colors.grey.shade50,
+              //               border: OutlineInputBorder(
+              //                   borderRadius: BorderRadius.circular(12)),
+              //               contentPadding: const EdgeInsets.symmetric(
+              //                   horizontal: 16, vertical: 14),
+              //             ),
+              //           ),
+              //           const SizedBox(height: 16),
+              //           TextFormField(
+              //             controller: alasanController,
+              //             maxLines: 3,
+              //             validator: (v) =>
+              //                 v!.isEmpty ? 'Alasan wajib diisi' : null,
+              //             decoration: InputDecoration(
+              //               labelText: 'Alasan / Keperluan',
+              //               prefixIcon: const Icon(Icons.edit_note),
+              //               filled: true,
+              //               fillColor: Colors.grey.shade50,
+              //               border: OutlineInputBorder(
+              //                   borderRadius: BorderRadius.circular(12)),
+              //             ),
+              //           ),
+              //           const SizedBox(height: 16),
+              //           Row(
+              //             children: [
+              //               Expanded(
+              //                 child: TextFormField(
+              //                   controller: mulaiController,
+              //                   readOnly: true,
+              //                   onTap: () async {
+              //                     final date = await showDatePicker(
+              //                       context: ctx2,
+              //                       initialDate: DateTime.now(),
+              //                       firstDate: DateTime.now(),
+              //                       lastDate: DateTime.now()
+              //                           .add(const Duration(days: 30)),
+              //                     );
+              //                     if (date != null) {
+              //                       mulaiController.text =
+              //                           '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+              //                     }
+              //                   },
+              //                   validator: (v) =>
+              //                       v!.isEmpty ? 'Wajib diisi' : null,
+              //                   decoration: InputDecoration(
+              //                     labelText: 'Tgl Mulai',
+              //                     prefixIcon:
+              //                         const Icon(Icons.calendar_today),
+              //                     filled: true,
+              //                     fillColor: Colors.grey.shade50,
+              //                     border: OutlineInputBorder(
+              //                         borderRadius:
+              //                             BorderRadius.circular(12)),
+              //                   ),
+              //                 ),
+              //               ),
+              //               const SizedBox(width: 12),
+              //               Expanded(
+              //                 child: TextFormField(
+              //                   controller: selesaiController,
+              //                   readOnly: true,
+              //                   onTap: () async {
+              //                     final date = await showDatePicker(
+              //                       context: ctx2,
+              //                       initialDate: DateTime.now(),
+              //                       firstDate: DateTime.now(),
+              //                       lastDate: DateTime.now()
+              //                           .add(const Duration(days: 30)),
+              //                     );
+              //                     if (date != null) {
+              //                       selesaiController.text =
+              //                           '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+              //                     }
+              //                   },
+              //                   validator: (v) =>
+              //                       v!.isEmpty ? 'Wajib diisi' : null,
+              //                   decoration: InputDecoration(
+              //                     labelText: 'Tgl Selesai',
+              //                     prefixIcon:
+              //                         const Icon(Icons.calendar_today),
+              //                     filled: true,
+              //                     fillColor: Colors.grey.shade50,
+              //                     border: OutlineInputBorder(
+              //                         borderRadius:
+              //                             BorderRadius.circular(12)),
+              //                   ),
+              //                 ),
+              //               ),
+              //             ],
+              //           ),
+              //           const SizedBox(height: 24),
+              //           SizedBox(
+              //             width: double.infinity,
+              //             height: 50,
+              //             child: ElevatedButton.icon(
+              //               onPressed: () {
+              //                 if (formKey.currentState!.validate()) {
+              //                   final tglMulai = DateTime.parse(
+              //                       mulaiController.text);
+              //                   final tglSelesai = DateTime.parse(
+              //                       selesaiController.text);
+              //                   final hari = tglSelesai
+              //                           .difference(tglMulai)
+              //                           .inDays +
+              //                       1;
 
-                                final newIzin = IzinModel(
-                                  id: DateTime.now()
-                                      .millisecondsSinceEpoch
-                                      .toString(),
-                                  santriId: selectedSantri!.id,
-                                  namaSantri: selectedSantri!.nama,
-                                  kelas: selectedSantri!.kelas,
-                                  jenisIzin: selectedJenisIzin,
-                                  alasan: alasanController.text,
-                                  tanggalMulai: mulaiController.text,
-                                  tanggalSelesai: selesaiController.text,
-                                  jumlahHari: hari,
-                                );
+              //                   final newIzin = IzinModel(
+              //                     id: DateTime.now()
+              //                         .millisecondsSinceEpoch
+              //                         .toString(),
+              //                     santriId: selectedSantri!.id,
+              //                     namaSantri: selectedSantri!.nama,
+              //                     kelas: selectedSantri!.kelas,
+              //                     jenisIzin: selectedJenisIzin,
+              //                     alasan: alasanController.text,
+              //                     tanggalMulai: mulaiController.text,
+              //                     tanggalSelesai: selesaiController.text,
+              //                     jumlahHari: hari,
+              //                   );
 
-                                setState(() => _izinList.add(newIzin));
-                                Navigator.pop(ctx2);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content:
-                                        Text('Pengajuan izin berhasil dikirim'),
-                                    backgroundColor: Color(0xFF1B5E20),
-                                  ),
-                                );
-                              }
-                            },
-                            icon: const Icon(Icons.send),
-                            label: const Text('Kirim Pengajuan'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
+              //                   setState(() => _izinList.add(newIzin));
+              //                   Navigator.pop(ctx2);
+              //                   ScaffoldMessenger.of(context).showSnackBar(
+              //                     const SnackBar(
+              //                       content:
+              //                           Text('Pengajuan izin berhasil dikirim'),
+              //                       backgroundColor: Color(0xFF1B5E20),
+              //                     ),
+              //                   );
+              //                 }
+              //               },
+              //               icon: const Icon(Icons.send),
+              //               label: const Text('Kirim Pengajuan'),
+              //             ),
+              //           ),
+              //         ],
+              //       ),
+              //     ),
+              //   ),
+              // ),
             ],
           ),
         ),
@@ -419,8 +419,7 @@ class _IzinList extends StatelessWidget {
           children: [
             Icon(Icons.inbox_outlined, size: 64, color: Colors.grey),
             SizedBox(height: 16),
-            Text('Tidak ada data izin',
-                style: TextStyle(color: Colors.grey)),
+            Text('Tidak ada data izin', style: TextStyle(color: Colors.grey)),
           ],
         ),
       );
@@ -533,8 +532,8 @@ class _IzinList extends StatelessWidget {
           Icon(icon, size: 15, color: const Color(0xFF1B5E20)),
           const SizedBox(width: 8),
           Text('$label: ',
-              style: const TextStyle(
-                  fontWeight: FontWeight.w600, fontSize: 13)),
+              style:
+                  const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
           Expanded(
             child: Text(
               value,

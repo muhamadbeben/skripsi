@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+
 import '../widgets/custom_textfield.dart';
+import '../services/auth_service.dart';
 import 'dashboard_screen.dart';
-import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -12,13 +12,21 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _formKey = GlobalKey<FormState>();
+  final AuthService _authService = AuthService();
 
+  final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
   bool _isLoading = false;
   bool _obscurePassword = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _emailController.text = "beben@gmail.com";
+    _passwordController.text = "beben123";
+  }
 
   @override
   void dispose() {
@@ -27,15 +35,13 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  // --- LOGIC FUNCTIONS ---
-
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
 
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
+      await _authService.login(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
@@ -43,7 +49,6 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) {
         _showSnackBar('Login berhasil! Selamat datang 😊', isError: false);
 
-        // Delay sebentar agar snackbar terlihat
         await Future.delayed(const Duration(seconds: 1));
 
         if (mounted) {
@@ -54,19 +59,8 @@ class _LoginScreenState extends State<LoginScreen> {
           );
         }
       }
-    } on FirebaseAuthException catch (e) {
-      String message = 'Login gagal. Periksa kembali email dan password.';
-      if (e.code == 'user-not-found')
-        message = 'Akun tidak ditemukan.';
-      else if (e.code == 'wrong-password')
-        message = 'Password salah.';
-      else if (e.code == 'invalid-email')
-        message = 'Format email tidak valid.';
-      else if (e.code == 'invalid-credential')
-        message = 'Email atau password salah.';
-      _showSnackBar(message, isError: true);
     } catch (e) {
-      _showSnackBar('Terjadi kesalahan sistem: $e', isError: true);
+      _showSnackBar(e.toString(), isError: true);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -74,15 +68,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _sendPasswordReset(String email) async {
     try {
-      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+      await _authService.sendPasswordResetEmail(email);
       _showSnackBar('Link reset password telah dikirim ke email Anda.',
           isError: false);
     } catch (e) {
-      _showSnackBar('Gagal mengirim email reset: $e', isError: true);
+      _showSnackBar(e.toString(), isError: true);
     }
   }
-
-  // --- UI COMPONENTS ---
 
   void _showForgotPasswordDialog() {
     final resetEmailController =
@@ -184,7 +176,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 36),
                   _buildLoginForm(),
                   const SizedBox(height: 20),
-                  _buildRegisterButton(),
                   const SizedBox(height: 16),
                   const Text(
                     '© 2026 Pondok Pesantren Khoirul Huda',
@@ -198,11 +189,6 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-
-  // ... (Widget _buildHeader, _buildBadge, _buildLoginForm, _buildLoginButton, dan _buildRegisterButton tetap sama dengan kode Anda sebelumnya)
-
-  // Catatan: Pastikan method _buildLoginForm memanggil _buildLoginButton() di dalamnya
-  // dan _buildLoginButton sudah menggunakan state _isLoading dengan benar.
 
   Widget _buildHeader() {
     return Column(
@@ -365,31 +351,6 @@ class _LoginScreenState extends State<LoginScreen> {
             : const Text('MASUK SEKARANG',
                 style:
                     TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2)),
-      ),
-    );
-  }
-
-  Widget _buildRegisterButton() {
-    return Container(
-      width: double.infinity,
-      constraints: const BoxConstraints(maxWidth: 400),
-      child: OutlinedButton.icon(
-        onPressed: () {
-          Navigator.push(context,
-              MaterialPageRoute(builder: (_) => const RegisterScreen()));
-        },
-        icon: const Icon(Icons.person_add_alt_1_rounded, color: Colors.white),
-        label: const Text('Daftar Peserta Baru',
-            style: TextStyle(
-                color: Colors.white,
-                fontSize: 15,
-                fontWeight: FontWeight.w600)),
-        style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: Colors.white60, width: 1.5),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          padding: const EdgeInsets.symmetric(vertical: 14),
-        ),
       ),
     );
   }

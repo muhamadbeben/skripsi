@@ -1,36 +1,34 @@
 import 'package:flutter/material.dart';
 import '../models/santri_model.dart';
 import '../models/rapor_model.dart';
+import '../services/nilai_service.dart';
 
-// ============================================================
-// KONSTANTA MATA PELAJARAN PESANTREN KHOIRUL HUDA
-// ============================================================
 const Map<String, List<String>> mapelPerKategori = {
-  "Al-Qur\'an & Tahfidz": [
+  "Al-Qur'an & Tahfidz": [
     'Tahfidz Al-Qur\'an',
-    'Tajwid',
-    'Tilawah',
-    'Gharib & Musykilat',
+    // 'Tajwid',
+    // 'Tilawah',
+    // 'Gharib & Musykilat',
   ],
   'Fiqih & Ushul': [
     'Fiqih',
-    'Ushul Fiqih',
-    'Faroidh',
-    'Qowaid Fiqhiyyah',
+    // 'Ushul Fiqih',
+    // 'Faroidh',
+    // 'Qowaid Fiqhiyyah',
   ],
   'Bahasa Arab & Nahwu Sharaf': [
     'Nahwu',
-    'Sharaf',
-    'Bahasa Arab',
-    'Muthola\'ah',
-    'Imla\' & Khot',
+    // 'Sharaf',
+    // 'Bahasa Arab',
+    // 'Muthola\'ah',
+    // 'Imla\' & Khot',
   ],
   'Ilmu Agama Lainnya': [
     'Aqidah / Tauhid',
-    'Akhlaq / Tasawuf',
-    'Hadits',
-    'Tafsir',
-    'Tarikh Islam',
+    // 'Akhlaq / Tasawuf',
+    // 'Hadits',
+    // 'Tafsir',
+    // 'Tarikh Islam',
   ],
 };
 
@@ -49,9 +47,6 @@ const List<String> tahunAjaranList = [
   '2023/2024',
 ];
 
-// ============================================================
-// NILAI SCREEN
-// ============================================================
 class NilaiScreen extends StatefulWidget {
   const NilaiScreen({super.key});
 
@@ -60,16 +55,21 @@ class NilaiScreen extends StatefulWidget {
 }
 
 class _NilaiScreenState extends State<NilaiScreen> {
+  final NilaiService _nilaiService = NilaiService();
+
   SantriModel? _selectedSantri;
   String _selectedSemester = 'Semester 1';
   String _selectedTahunAjaran = '2025/2026';
+  String _currentRaporId = '';
 
-  // Controllers per mata pelajaran
   final Map<String, TextEditingController> _nilaiControllers = {};
+  bool _isLoadingData = false;
+  bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
+
     for (final kategori in mapelPerKategori.values) {
       for (final mapel in kategori) {
         _nilaiControllers[mapel] = TextEditingController();
@@ -83,6 +83,42 @@ class _NilaiScreenState extends State<NilaiScreen> {
       c.dispose();
     }
     super.dispose();
+  }
+
+  Future<void> _loadExistingNilai() async {
+    if (_selectedSantri == null) return;
+
+    setState(() => _isLoadingData = true);
+
+    try {
+      final rapor = await _nilaiService.getRaporByFilter(
+        santriId: _selectedSantri!.id,
+        semester: _selectedSemester,
+        tahunAjaran: _selectedTahunAjaran,
+      );
+
+      for (var c in _nilaiControllers.values) {
+        c.clear();
+      }
+
+      if (rapor != null) {
+        _currentRaporId = rapor.id;
+        rapor.nilaiMataPelajaran.forEach((key, value) {
+          if (_nilaiControllers.containsKey(key)) {
+            _nilaiControllers[key]!.text =
+                value % 1 == 0 ? value.toInt().toString() : value.toString();
+          }
+        });
+      } else {
+        _currentRaporId = '';
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal memuat nilai: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoadingData = false);
+    }
   }
 
   List<String> get _semuaMapel =>
@@ -109,82 +145,158 @@ class _NilaiScreenState extends State<NilaiScreen> {
   }
 
   String _getPredikat(double nilai) {
-    if (nilai >= 90) return 'Mumtaz';
-    if (nilai >= 80) return 'Jayyid Jiddan';
-    if (nilai >= 70) return 'Jayyid';
-    if (nilai >= 60) return 'Maqbul';
-    return 'Rasib';
+    return RaporModel.getPredikat(nilai);
   }
 
-  void _simpanNilai() {
+  Future<void> _simpanNilai() async {
     if (_selectedSantri == null) return;
+
     final kosong =
         _semuaMapel.where((m) => _nilaiControllers[m]!.text.isEmpty).length;
 
     if (kosong > 0) {
-      showDialog(
+      final confirm = await showDialog<bool>(
         context: context,
         builder: (_) => AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Row(
-            children: [
-              Icon(Icons.warning_amber_rounded, color: Colors.orange),
-              SizedBox(width: 8),
-              Text('Nilai Belum Lengkap'),
-            ],
-          ),
+          title: const Text('Nilai Belum Lengkap'),
           content: Text(
-              'Masih ada $kosong mata pelajaran yang belum diisi. Simpan sekarang?'),
+              'Masih ada $kosong mata pelajaran yang kosong. Simpan sekarang?'),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Batal'),
-            ),
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Batal')),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1B5E20),
-                  foregroundColor: Colors.white),
-              onPressed: () {
-                Navigator.pop(context);
-                _doSimpan();
-              },
-              child: const Text('Simpan'),
-            ),
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Simpan')),
           ],
         ),
       );
-      return;
+      if (confirm != true) return;
     }
-    _doSimpan();
+
+    setState(() => _isSaving = true);
+
+    try {
+      Map<String, double> nilaiMap = {};
+      for (var entry in _nilaiControllers.entries) {
+        if (entry.value.text.isNotEmpty) {
+          nilaiMap[entry.key] = double.tryParse(entry.value.text) ?? 0.0;
+        }
+      }
+
+      final raporBaru = RaporModel(
+        id: _currentRaporId,
+        santriId: _selectedSantri!.id,
+        namaSantri: _selectedSantri!.nama,
+        kelas: _selectedSantri!.kelas,
+        semester: _selectedSemester,
+        tahunAjaran: _selectedTahunAjaran,
+        nilaiMataPelajaran: nilaiMap,
+        nilaiRataRata: _nilaiRataRata,
+        rankKelas: 0,
+        totalSiswaKelas: 0,
+        predikat: RaporModel.getPredikat(_nilaiRataRata),
+        catatanWaliKelas: '',
+      );
+
+      await _nilaiService.saveRapor(raporBaru);
+
+      await _loadExistingNilai();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Data Nilai berhasil disimpan!'),
+            backgroundColor: Color(0xFF1B5E20),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal menyimpan: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 
-  void _doSimpan() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle, color: Colors.white),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'Nilai ${_selectedSantri!.nama} (${_selectedSemester}) berhasil disimpan!',
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: const Color(0xFF1B5E20),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+  void _showSantriPicker() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-    );
-  }
+      builder: (ctx) {
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.7,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2)),
+              ),
+              const Text("Pilih Santri",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
+              Expanded(
+                child: StreamBuilder<List<SantriModel>>(
+                  stream: _nilaiService.getSantriList(),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasError)
+                      return const Center(child: Text("Error memuat data"));
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
 
-  void _resetNilai() {
-    for (final c in _nilaiControllers.values) {
-      c.clear();
-    }
-    setState(() {});
+                    final listSantri = snapshot.data ?? [];
+
+                    if (listSantri.isEmpty) {
+                      return const Center(child: Text("Belum ada data santri"));
+                    }
+
+                    return ListView.builder(
+                      itemCount: listSantri.length,
+                      itemBuilder: (ctx, i) {
+                        final s = listSantri[i];
+                        return ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor:
+                                const Color(0xFF1B5E20).withOpacity(0.1),
+                            child: Text(s.nama[0],
+                                style:
+                                    const TextStyle(color: Color(0xFF1B5E20))),
+                          ),
+                          title: Text(s.nama),
+                          subtitle: Text("NIS: ${s.nis}"),
+                          onTap: () {
+                            setState(() {
+                              _selectedSantri = s;
+                            });
+                            Navigator.pop(context);
+                            _loadExistingNilai();
+                          },
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -194,6 +306,8 @@ class _NilaiScreenState extends State<NilaiScreen> {
       body: Column(
         children: [
           _buildHeader(),
+          if (_isLoadingData)
+            const LinearProgressIndicator(color: Colors.orange),
           if (_selectedSantri != null) _buildScoreBoard(),
           Expanded(
             child: _selectedSantri == null
@@ -204,18 +318,23 @@ class _NilaiScreenState extends State<NilaiScreen> {
       ),
       floatingActionButton: _selectedSantri != null
           ? FloatingActionButton.extended(
-              onPressed: _simpanNilai,
+              onPressed: _isSaving ? null : _simpanNilai,
               backgroundColor: const Color(0xFF1B5E20),
               foregroundColor: Colors.white,
-              icon: const Icon(Icons.save_rounded),
-              label: const Text('Simpan Nilai',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
+              icon: _isSaving
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                          color: Colors.white, strokeWidth: 2))
+                  : const Icon(Icons.save_rounded),
+              label: Text(_isSaving ? 'Menyimpan...' : 'Simpan Nilai',
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
             )
           : null,
     );
   }
 
-  // ── HEADER ──
   Widget _buildHeader() {
     return Container(
       decoration: const BoxDecoration(
@@ -233,7 +352,6 @@ class _NilaiScreenState extends State<NilaiScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Baris judul + tombol reset
               Row(
                 children: [
                   IconButton(
@@ -252,39 +370,56 @@ class _NilaiScreenState extends State<NilaiScreen> {
                   ),
                   if (_selectedSantri != null)
                     IconButton(
-                      tooltip: 'Reset Nilai',
+                      tooltip: 'Refresh Data',
                       icon: const Icon(Icons.refresh_rounded,
                           color: Colors.white70),
-                      onPressed: _resetNilai,
+                      onPressed: _loadExistingNilai,
                     ),
                 ],
               ),
-              const SizedBox(height: 12),
-
-              // Pilih santri
-              _DropdownCard(
-                prefixIcon: Icons.person_outline,
-                hint: 'Pilih Santri...',
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<SantriModel>(
-                    value: _selectedSantri,
-                    isExpanded: true,
-                    hint: const Text('Pilih Santri',
-                        style: TextStyle(color: Colors.grey)),
-                    items: dummySantriList
-                        .map((s) => DropdownMenuItem(
-                              value: s,
-                              child: Text('${s.nama} — Kelas ${s.kelas}',
-                                  overflow: TextOverflow.ellipsis),
-                            ))
-                        .toList(),
-                    onChanged: (v) => setState(() => _selectedSantri = v),
+              const SizedBox(height: 16),
+              GestureDetector(
+                onTap: _showSantriPicker,
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.white.withOpacity(0.3))),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.person_search_rounded,
+                          color: Colors.white),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _selectedSantri == null
+                                  ? "Pilih Santri..."
+                                  : _selectedSantri!.nama,
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            if (_selectedSantri != null)
+                              Text("NIS: ${_selectedSantri!.nis}",
+                                  style: TextStyle(
+                                      color: Colors.white.withOpacity(0.8),
+                                      fontSize: 12)),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.arrow_drop_down, color: Colors.white),
+                    ],
                   ),
                 ),
               ),
               const SizedBox(height: 10),
-
-              // Semester & Tahun Ajaran
               Row(
                 children: [
                   Expanded(
@@ -294,12 +429,16 @@ class _NilaiScreenState extends State<NilaiScreen> {
                         child: DropdownButton<String>(
                           value: _selectedSemester,
                           isExpanded: true,
+                          style: const TextStyle(
+                              color: Colors.black87, fontSize: 13),
                           items: semesterList
                               .map((s) =>
                                   DropdownMenuItem(value: s, child: Text(s)))
                               .toList(),
-                          onChanged: (v) =>
-                              setState(() => _selectedSemester = v!),
+                          onChanged: (v) {
+                            setState(() => _selectedSemester = v!);
+                            _loadExistingNilai();
+                          },
                         ),
                       ),
                     ),
@@ -312,12 +451,16 @@ class _NilaiScreenState extends State<NilaiScreen> {
                         child: DropdownButton<String>(
                           value: _selectedTahunAjaran,
                           isExpanded: true,
+                          style: const TextStyle(
+                              color: Colors.black87, fontSize: 13),
                           items: tahunAjaranList
                               .map((s) =>
                                   DropdownMenuItem(value: s, child: Text(s)))
                               .toList(),
-                          onChanged: (v) =>
-                              setState(() => _selectedTahunAjaran = v!),
+                          onChanged: (v) {
+                            setState(() => _selectedTahunAjaran = v!);
+                            _loadExistingNilai();
+                          },
                         ),
                       ),
                     ),
@@ -331,7 +474,6 @@ class _NilaiScreenState extends State<NilaiScreen> {
     );
   }
 
-  // ── SCORE BOARD ──
   Widget _buildScoreBoard() {
     final rata = _nilaiRataRata;
     final predikat = _getPredikat(rata);
@@ -355,7 +497,6 @@ class _NilaiScreenState extends State<NilaiScreen> {
         children: [
           Row(
             children: [
-              // Nilai rata-rata
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -385,8 +526,6 @@ class _NilaiScreenState extends State<NilaiScreen> {
                   ],
                 ),
               ),
-
-              // Predikat badge
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -414,8 +553,6 @@ class _NilaiScreenState extends State<NilaiScreen> {
             ],
           ),
           const SizedBox(height: 14),
-
-          // Progress pengisian
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -457,42 +594,51 @@ class _NilaiScreenState extends State<NilaiScreen> {
     );
   }
 
-  // ── EMPTY STATE ──
   Widget _buildEmptyState() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              color: const Color(0xFF1B5E20).withOpacity(0.08),
-              shape: BoxShape.circle,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                color: const Color(0xFF1B5E20).withOpacity(0.08),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.person_search_outlined,
+                  size: 50, color: Color(0xFF1B5E20)),
             ),
-            child: const Icon(Icons.grade_outlined,
-                size: 50, color: Color(0xFF1B5E20)),
-          ),
-          const SizedBox(height: 20),
-          const Text(
-            'Pilih santri terlebih dahulu',
-            style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF1B5E20)),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Nilai akan ditampilkan setelah\nsantri dipilih',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
-          ),
-        ],
+            const SizedBox(height: 20),
+            const Text(
+              'Pilih santri terlebih dahulu',
+              style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1B5E20)),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Klik tombol di bagian atas untuk\nmemilih santri.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
+              onPressed: _showSantriPicker,
+              icon: const Icon(Icons.touch_app),
+              label: const Text("Pilih Santri"),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1B5E20),
+                  foregroundColor: Colors.white),
+            )
+          ],
+        ),
       ),
     );
   }
 
-  // ── LIST NILAI ──
   Widget _buildNilaiList() {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
@@ -512,9 +658,6 @@ class _NilaiScreenState extends State<NilaiScreen> {
   }
 }
 
-// ============================================================
-// WIDGET: DROPDOWN CARD
-// ============================================================
 class _DropdownCard extends StatelessWidget {
   final Widget child;
   final IconData prefixIcon;
@@ -545,9 +688,6 @@ class _DropdownCard extends StatelessWidget {
   }
 }
 
-// ============================================================
-// WIDGET: SEKSI KATEGORI MAPEL
-// ============================================================
 class _KategoriSection extends StatelessWidget {
   final String kategori;
   final List<String> mapelList;
@@ -570,7 +710,6 @@ class _KategoriSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Label kategori
         Padding(
           padding: const EdgeInsets.only(bottom: 10, top: 4),
           child: Row(
@@ -595,8 +734,6 @@ class _KategoriSection extends StatelessWidget {
             ],
           ),
         ),
-
-        // Kartu container semua mapel dalam kategori ini
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
@@ -631,9 +768,6 @@ class _KategoriSection extends StatelessWidget {
   }
 }
 
-// ============================================================
-// WIDGET: BARIS INPUT NILAI
-// ============================================================
 class _NilaiRow extends StatefulWidget {
   final String mapel;
   final TextEditingController controller;
@@ -671,7 +805,6 @@ class _NilaiRowState extends State<_NilaiRow> {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           child: Row(
             children: [
-              // Nama mapel
               Expanded(
                 flex: 5,
                 child: Column(
@@ -696,8 +829,6 @@ class _NilaiRowState extends State<_NilaiRow> {
                   ],
                 ),
               ),
-
-              // Input nilai
               SizedBox(
                 width: 80,
                 child: Focus(
@@ -750,8 +881,6 @@ class _NilaiRowState extends State<_NilaiRow> {
                   ),
                 ),
               ),
-
-              // Indikator warna
               const SizedBox(width: 8),
               AnimatedContainer(
                 duration: const Duration(milliseconds: 300),

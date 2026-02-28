@@ -7,9 +7,6 @@ import 'package:path_provider/path_provider.dart';
 import '../models/rapor_model.dart';
 import '../screens/rapor_screen.dart';
 
-// ============================================================
-// WARNA TEMA
-// ============================================================
 const _hijauTua = PdfColor.fromInt(0xFF1B5E20);
 const _hijauMid = PdfColor.fromInt(0xFF388E3C);
 const _hijauLight = PdfColor.fromInt(0xFFC8E6C9);
@@ -21,11 +18,6 @@ const _biru = PdfColor.fromInt(0xFF1565C0);
 const _kuning = PdfColor.fromInt(0xFFF57F17);
 const _merah = PdfColor.fromInt(0xFFC62828);
 
-// ============================================================
-// DATA KELOMPOK MATA PELAJARAN
-// ============================================================
-
-/// Daftar mapel per kelompok. Key = nama di RaporModel, Value = keterangan singkat.
 const Map<String, Map<String, String>> _kelompokMapel = {
   'A  PENDIDIKAN AGAMA': {
     "Qur'an Hadits": "Al-Quran Hadits",
@@ -56,7 +48,6 @@ const Map<String, Map<String, String>> _kelompokMapel = {
   },
 };
 
-/// KKM per mata pelajaran.
 const Map<String, int> _kkmMapel = {
   "Qur'an Hadits": 60,
   "Aqidah Akhlak": 60,
@@ -81,7 +72,6 @@ const Map<String, int> _kkmMapel = {
   "Mahfuzot": 50,
 };
 
-/// Daftar ekskul yang ditampilkan di rapor.
 const List<String> _ekskul = [
   "1. Muhadarah",
   "2. Pramuka",
@@ -89,10 +79,6 @@ const List<String> _ekskul = [
   "4. Bimbingan Tahfizh Qur'an",
   "5. Seni Baca Al Qur'an",
 ];
-
-// ============================================================
-// HELPERS
-// ============================================================
 
 String _predikatLabel(double n) {
   if (n >= 90) return 'Mumtaz';
@@ -128,14 +114,7 @@ String _formatTanggal(DateTime dt) {
   return '${dt.day} ${bulan[dt.month]} ${dt.year}';
 }
 
-// ============================================================
-// SERVICE UTAMA
-// ============================================================
-
 class RaporPdfService {
-  // ── PUBLIC API ───────────────────────────────────────────────
-
-  /// Buka dialog cetak / simpan PDF via sistem operasi.
   static Future<void> cetakRapor(RaporModel rapor) async {
     await Printing.layoutPdf(
       onLayout: (_) => _buildPdf(rapor),
@@ -143,7 +122,6 @@ class RaporPdfService {
     );
   }
 
-  /// Simpan PDF ke folder dokumen lokal & kembalikan path-nya.
   static Future<String> simpanRapor(RaporModel rapor) async {
     final Uint8List bytes = await _buildPdf(rapor);
     final Directory dir = await getApplicationDocumentsDirectory();
@@ -154,7 +132,6 @@ class RaporPdfService {
     return file.path;
   }
 
-  /// Bagikan PDF ke WhatsApp / email / aplikasi lain.
   static Future<void> shareRapor(RaporModel rapor) async {
     final Uint8List bytes = await _buildPdf(rapor);
     await Printing.sharePdf(
@@ -162,8 +139,6 @@ class RaporPdfService {
       filename: 'Rapor_${rapor.namaSantri}_${rapor.semester}.pdf',
     );
   }
-
-  // ── BUILDER UTAMA ────────────────────────────────────────────
 
   static Future<Uint8List> _buildPdf(RaporModel rapor) async {
     final pw.Document doc = pw.Document(
@@ -198,8 +173,6 @@ class RaporPdfService {
     return doc.save();
   }
 
-  // ── SECTION 1 : KOP SEKOLAH ──────────────────────────────────
-
   static pw.Widget _buildKop() {
     return pw.Container(
       decoration: pw.BoxDecoration(
@@ -232,8 +205,6 @@ class RaporPdfService {
     );
   }
 
-  // ── SECTION 2 : JUDUL RAPOR ──────────────────────────────────
-
   static pw.Widget _buildJudul() {
     return pw.Center(
       child: pw.Column(
@@ -252,8 +223,6 @@ class RaporPdfService {
       ),
     );
   }
-
-  // ── SECTION 3 : INFO SANTRI ──────────────────────────────────
 
   static pw.Widget _buildInfoSantri(RaporModel rapor) {
     return pw.Container(
@@ -314,12 +283,9 @@ class RaporPdfService {
     );
   }
 
-  // ── SECTION 4 : TABEL NILAI ──────────────────────────────────
-
   static pw.Widget _buildTabelNilai(RaporModel rapor) {
     final List<pw.TableRow> rows = [];
 
-    // — Header kolom —
     rows.add(pw.TableRow(
       decoration: pw.BoxDecoration(color: _hijauTua),
       children: [
@@ -337,11 +303,9 @@ class RaporPdfService {
     int totalKkm = 0;
 
     _kelompokMapel.forEach((String grupLabel, Map<String, String> mapelMap) {
-      // — Header kelompok (full-width, dibuat dengan 6 sel kosong + 1 sel label) —
       rows.add(pw.TableRow(
         decoration: pw.BoxDecoration(color: _hijauLight),
         children: [
-          // Sel pertama berisi label kelompok
           pw.Padding(
             padding: pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             child: pw.Text(
@@ -353,9 +317,11 @@ class RaporPdfService {
               ),
             ),
           ),
-          // 5 sel kosong agar kolom tetap terjaga
-          pw.SizedBox(), pw.SizedBox(),
-          pw.SizedBox(), pw.SizedBox(), pw.SizedBox(),
+          pw.SizedBox(),
+          pw.SizedBox(),
+          pw.SizedBox(),
+          pw.SizedBox(),
+          pw.SizedBox(),
         ],
       ));
 
@@ -377,7 +343,6 @@ class RaporPdfService {
             _tdCell(mapelId),
             _tdCell(mapelLabel),
             _tdCell(kkm.toString(), center: true),
-            // Nilai teori — kotak berwarna
             pw.Padding(
               padding: pw.EdgeInsets.symmetric(horizontal: 3, vertical: 3),
               child: pw.Center(
@@ -398,7 +363,6 @@ class RaporPdfService {
                 ),
               ),
             ),
-            // Nilai praktek (placeholder)
             _tdCell('-', center: true),
           ],
         ));
@@ -406,11 +370,9 @@ class RaporPdfService {
       });
     });
 
-    // — Baris JUMLAH —
     rows.add(pw.TableRow(
       decoration: pw.BoxDecoration(color: _hijauTua),
       children: [
-        // Label JUMLAH spanning kolom 0-2 (dibuat manual 3 sel)
         pw.Padding(
           padding: pw.EdgeInsets.symmetric(horizontal: 6, vertical: 5),
           child: pw.Text(
@@ -423,13 +385,10 @@ class RaporPdfService {
             textAlign: pw.TextAlign.center,
           ),
         ),
-        pw.SizedBox(), // kolom 1 kosong (label JUMLAH menempati lebar kolom 0)
-        pw.SizedBox(), // kolom 2 kosong
-        // Total KKM
+        pw.SizedBox(),
+        pw.SizedBox(),
         _jumlahCell(totalKkm.toString()),
-        // Total Nilai
         _jumlahCell(totalNilai.toStringAsFixed(0)),
-        // Kolom praktek kosong
         _jumlahCell(''),
       ],
     ));
@@ -454,13 +413,10 @@ class RaporPdfService {
     );
   }
 
-  // ── SECTION 5 : PERINGKAT & EKSKUL ──────────────────────────
-
   static pw.Widget _buildPeringkatEkskul(RaporModel rapor) {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        // Peringkat kelas
         pw.Container(
           width: double.infinity,
           padding: pw.EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -475,7 +431,6 @@ class RaporPdfService {
           ),
         ),
         pw.SizedBox(height: 2),
-        // Kegiatan ekskul
         pw.Container(
           width: double.infinity,
           padding: pw.EdgeInsets.all(8),
@@ -509,8 +464,6 @@ class RaporPdfService {
       ],
     );
   }
-
-  // ── SECTION 6 : CATATAN WALI KELAS ──────────────────────────
 
   static pw.Widget _buildCatatanWaliKelas(RaporModel rapor) {
     return pw.Container(
@@ -554,12 +507,9 @@ class RaporPdfService {
     );
   }
 
-  // ── SECTION 7 : RINGKASAN BAWAH ─────────────────────────────
-
   static pw.Widget _buildRingkasanBawah(RaporModel rapor) {
     final double rata = rapor.nilaiRataRata;
 
-    // Gunakan List<Map> agar kompatibel semua versi Dart (tanpa Record syntax)
     final List<Map<String, String>> items = [
       {'label': 'Nilai Rata-rata', 'value': rata.toStringAsFixed(1)},
       {'label': 'Predikat', 'value': _predikatLabel(rata)},
@@ -602,8 +552,6 @@ class RaporPdfService {
     );
   }
 
-  // ── SECTION 8 : TANDA TANGAN ─────────────────────────────────
-
   static pw.Widget _buildTandaTangan() {
     return pw.Row(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -639,9 +587,6 @@ class RaporPdfService {
     );
   }
 
-  // ── CELL HELPERS ─────────────────────────────────────────────
-
-  /// Header cell (latar hijau, teks putih tebal).
   static pw.Widget _thCell(String text) {
     return pw.Padding(
       padding: pw.EdgeInsets.symmetric(horizontal: 4, vertical: 5),
@@ -659,7 +604,6 @@ class RaporPdfService {
     );
   }
 
-  /// Data cell biasa.
   static pw.Widget _tdCell(String text, {bool center = false}) {
     return pw.Padding(
       padding: pw.EdgeInsets.symmetric(horizontal: 4, vertical: 4),
@@ -671,7 +615,6 @@ class RaporPdfService {
     );
   }
 
-  /// Cell untuk baris JUMLAH (teks putih tebal).
   static pw.Widget _jumlahCell(String text) {
     return pw.Padding(
       padding: pw.EdgeInsets.symmetric(horizontal: 3, vertical: 5),

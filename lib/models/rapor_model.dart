@@ -9,7 +9,7 @@ class RaporModel {
   final double nilaiRataRata;
   final int rankKelas;
   final int totalSiswaKelas;
-  final String predikat; // A, B, C, D
+  final String predikat;
   final String catatanWaliKelas;
   final DateTime tanggalRapor;
 
@@ -76,7 +76,6 @@ class RaporModel {
   }
 }
 
-// Mata pelajaran di Pesantren
 const List<String> mataPelajaranPesantren = [
   'Al-Quran & Tajwid',
   'Fiqih',

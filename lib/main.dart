@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart'; // Tambahkan ini
-import 'screens/login_screen.dart'; // Pastikan path ini benar sesuai folder Anda
+import 'package:firebase_core/firebase_core.dart';
+import 'screens/login_screen.dart';
 
 void main() async {
-  // WAJIB: Inisialisasi Firebase sebelum menjalankan aplikasi
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
 
@@ -22,7 +21,6 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.green,
         useMaterial3: true,
       ),
-      // MENGARAHKAN KE LOGIN SCREEN ANDA
       home: const LoginScreen(),
     );
   }

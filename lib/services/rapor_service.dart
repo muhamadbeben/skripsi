@@ -1,64 +1,44 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/rapor_model.dart';
-import 'firestore_service.dart';
 
 class RaporService {
-  final FirestoreService _firestoreService = FirestoreService();
+  final CollectionReference _raporCollection =
+      FirebaseFirestore.instance.collection('rapor');
 
-  Future<RaporModel> buatRapor({
-    required String santriId,
-    required String namaSantri,
-    required String kelas,
-    required String semester,
-    required String tahunAjaran,
-    required Map<String, double> nilaiMataPelajaran,
-    required int rankKelas,
-    required int totalSiswaKelas,
-    required String catatanWaliKelas,
-  }) async {
-    final nilaiRataRata = nilaiMataPelajaran.values.isEmpty
-        ? 0.0
-        : nilaiMataPelajaran.values.reduce((a, b) => a + b) /
-            nilaiMataPelajaran.length;
+  Stream<List<RaporModel>> getRaporStream({
+    String? semester,
+    String? tahunAjaran,
+    String? santriId,
+  }) {
+    Query query = _raporCollection;
 
-    final rapor = RaporModel(
-      id: '${santriId}_${semester}_${tahunAjaran}'.replaceAll(' ', '_'),
-      santriId: santriId,
-      namaSantri: namaSantri,
-      kelas: kelas,
-      semester: semester,
-      tahunAjaran: tahunAjaran,
-      nilaiMataPelajaran: nilaiMataPelajaran,
-      nilaiRataRata: nilaiRataRata,
-      rankKelas: rankKelas,
-      totalSiswaKelas: totalSiswaKelas,
-      predikat: RaporModel.getPredikat(nilaiRataRata),
-      catatanWaliKelas: catatanWaliKelas,
-    );
+    if (santriId != null) {
+      query = query.where('santriId', isEqualTo: santriId);
+    }
 
-    await _firestoreService.simpanRapor(rapor);
-    return rapor;
+    if (semester != null && semester != 'Semua') {
+      query = query.where('semester', isEqualTo: semester);
+    }
+    if (tahunAjaran != null && tahunAjaran != 'Semua') {
+      query = query.where('tahunAjaran', isEqualTo: tahunAjaran);
+    }
+
+    return query.snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) {
+        return RaporModel.fromMap(doc.data() as Map<String, dynamic>);
+      }).toList();
+    });
   }
 
   String generateNarasiRapor(RaporModel rapor) {
     final buffer = StringBuffer();
     buffer.writeln('RAPOR SANTRI PONDOK PESANTREN KHOIRUL HUDA');
-    buffer.writeln('==========================================');
-    buffer.writeln('Nama Santri : ${rapor.namaSantri}');
-    buffer.writeln('Kelas       : ${rapor.kelas}');
-    buffer.writeln('Semester    : ${rapor.semester}');
-    buffer.writeln('Tahun Ajaran: ${rapor.tahunAjaran}');
-    buffer.writeln('');
-    buffer.writeln('NILAI MATA PELAJARAN:');
+    buffer.writeln('Nama: ${rapor.namaSantri} | Kelas: ${rapor.kelas}');
+    buffer.writeln('Semester: ${rapor.semester} ${rapor.tahunAjaran}');
+    buffer.writeln('------------------------------------------');
     rapor.nilaiMataPelajaran.forEach((mapel, nilai) {
-      buffer.writeln('  $mapel: ${nilai.toStringAsFixed(1)}');
+      buffer.writeln('$mapel: ${nilai.toStringAsFixed(0)}');
     });
-    buffer.writeln('');
-    buffer.writeln('Nilai Rata-rata : ${rapor.nilaiRataRata.toStringAsFixed(2)}');
-    buffer.writeln('Predikat        : ${rapor.predikat}');
-    buffer.writeln('Peringkat       : ${rapor.rankKelas} dari ${rapor.totalSiswaKelas} santri');
-    buffer.writeln('');
-    buffer.writeln('Catatan Wali Kelas:');
-    buffer.writeln(rapor.catatanWaliKelas);
     return buffer.toString();
   }
 }
